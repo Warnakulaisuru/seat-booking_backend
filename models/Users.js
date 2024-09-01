@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   gender: String,
   department: String,
   trainerId:Number,
+  password:String,
 });
 
 

@@ -87,6 +87,23 @@ app.post("/createUser", (req, res) => {
     .catch((err) => res.status(500).json(err));
 });
 
+app.post("/login", (req, res) => {
+  const {email, password} = req.body;
+  UserModel.findOne({email:email})
+  .then(user => {
+      if (user) {
+          if(user.password === password){
+              res.json("Success") // Changed to "Success"
+          } else {
+              res.json("Incorrect") // Changed to "Incorrect"
+          } 
+      } else {
+          res.json("Not Registered") // Changed to "Not Registered"
+      }
+  })
+  .catch(err => res.status(500).json("Error: " + err)); // Added catch for any errors
+});
+
 // Use department routes
 app.use('/api', departmentRoutes);
 
