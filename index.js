@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const departmentRoutes = require('./routes/department'); // Import department routes
+const userRoutes = require('./routes/users'); 
 
 const app = express();
 app.use(cors());
@@ -106,6 +107,7 @@ app.post("/login", (req, res) => {
 
 // Use department routes
 app.use('/api', departmentRoutes);
+app.use('/api', userRoutes);
 
 app.listen(port, () => {
   connect();
