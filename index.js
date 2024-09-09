@@ -2,9 +2,11 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
-const departmentRoutes = require('./routes/department'); // Import department routes
+const departmentRoutes = require('./routes/department');
 const userRoutes = require('./routes/users'); 
+const bookingRoutes = require("./routes/bookings");
 
 const app = express();
 app.use(cors());
@@ -17,97 +19,117 @@ const connect = async () => {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("MongoDB database connected");
   } catch (err) {
-    console.log("MongoDB database connection failed");
+    console.error("MongoDB database connection failed", err);
   }
 };
 
 // User-related routes
 const UserModel = require("./models/Users");
 
-// Check for existing user by NIC, email, or Trainer ID
-app.post("/checkUser", (req, res) => {
+app.post("/checkUser", async (req, res) => {
   const { email, nic, trainerId } = req.body;
-  UserModel.findOne({ $or: [{ email }, { nic }, { trainerId }] })
-    .then((user) => {
-      res.json({ exists: !!user });
-    })
-    .catch((err) => res.status(500).json(err));
+  try {
+    const user = await UserModel.findOne({ $or: [{ email }, { nic }, { trainerId }] });
+    res.json({ exists: !!user });
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
 });
 
-app.get("/", (req, res) => {
-  UserModel.find({})
-    .then((users) => res.json(users))
-    .catch((err) => res.status(500).json(err));
+app.get("/", async (req, res) => {
+  try {
+    const users = await UserModel.find({});
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
 });
 
-app.get("/getUser/:id", (req, res) => {
+app.get("/getUser/:id", async (req, res) => {
   const id = req.params.id;
-  UserModel.findById(id)
-    .then((user) => res.json(user))
-    .catch((err) => res.status(500).json(err));
+  try {
+    const user = await UserModel.findById(id);
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
 });
 
-app.put("/updateUser/:id", (req, res) => {
+app.put("/updateUser/:id", async (req, res) => {
   const id = req.params.id;
-  UserModel.findByIdAndUpdate(
-    id,
-    {
-      name: req.body.name,
-      email: req.body.email,
-      age: req.body.age,
-      nic: req.body.nic,
-      gender: req.body.gender,
-      department: req.body.department,
-      trainerId: req.body.trainerId, 
-    },
-    { new: true }
-  )
-    .then((user) => res.json(user))
-    .catch((err) => res.status(500).json(err));
+  try {
+    const user = await UserModel.findByIdAndUpdate(id, req.body, { new: true });
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
 });
 
-app.delete("/deleteUser/:id", (req, res) => {
+app.delete("/deleteUser/:id", async (req, res) => {
   const id = req.params.id;
-  UserModel.findByIdAndDelete(id)
-    .then((user) => res.json(user))
-    .catch((err) => res.status(500).json(err));
+  try {
+    const user = await UserModel.findByIdAndDelete(id);
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
 });
 
-app.post("/createUser", (req, res) => {
-  const { email, nic, trainerId } = req.body;
-  UserModel.findOne({ $or: [{ email }, { nic }, { trainerId }] })
-    .then((user) => {
-      if (user) {
-        res.status(400).json({ message: "User with this NIC, email, or Trainer ID already exists!" });
+app.post("/createUser", async (req, res) => {
+  const { email, password, nic, trainerId } = req.body;
+  try {
+    const user = await UserModel.findOne({ $or: [{ email }, { nic }, { trainerId }] });
+    if (user) {
+      res.status(400).json({ message: "User with this NIC, email, or Trainer ID already exists!" });
+    } else {
+      // Store password as plaintext
+      const newUser = await UserModel.create(req.body);
+      res.json(newUser);
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await UserModel.findOne({ email });
+    if (user) {
+      // Compare plaintext password
+      if (user.password === password) {
+        const token = jwt.sign(
+          { id: user._id, email: user.email },
+          process.env.JWT_SECRET,
+          { expiresIn: '12h' }
+        );
+        res.json({ message: "Success", token });
       } else {
-        UserModel.create(req.body)
-          .then((newUser) => res.json(newUser))
-          .catch((err) => res.status(500).json(err));
+        res.status(401).json({ message: "Incorrect password" });
       }
-    })
-    .catch((err) => res.status(500).json(err));
+    } else {
+      res.status(404).json({ message: "User not registered" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Error", error: err });
+  }
 });
 
-app.post("/login", (req, res) => {
-  const {email, password} = req.body;
-  UserModel.findOne({email:email})
-  .then(user => {
-      if (user) {
-          if(user.password === password){
-              res.json("Success") // Changed to "Success"
-          } else {
-              res.json("Incorrect") // Changed to "Incorrect"
-          } 
-      } else {
-          res.json("Not Registered") // Changed to "Not Registered"
-      }
-  })
-  .catch(err => res.status(500).json("Error: " + err)); // Added catch for any errors
-});
-
-// Use department routes
 app.use('/api', departmentRoutes);
 app.use('/api', userRoutes);
+app.use("/api", bookingRoutes);
 
 app.listen(port, () => {
   connect();
