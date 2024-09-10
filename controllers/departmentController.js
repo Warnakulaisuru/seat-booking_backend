@@ -1,6 +1,5 @@
 const Department = require('../models/Department');
 
-// Get all departments
 exports.getAllDepartments = (req, res) => {
   Department.find()
     .then((departments) => {
@@ -9,7 +8,6 @@ exports.getAllDepartments = (req, res) => {
     .catch((err) => res.status(500).json({ message: "An error occurred", error: err.message }));
 };
 
-// Add a new department
 exports.addDepartment = (req, res) => {
   const { name } = req.body;
 

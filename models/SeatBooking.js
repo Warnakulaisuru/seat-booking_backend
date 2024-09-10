@@ -1,26 +1,8 @@
 const mongoose = require("mongoose");
 
-const seatBookingSchema = new mongoose.Schema({
-  seatNumber: {
-    type: Number,
-    required: true,
-    unique: true // Ensure each seat can only be booked once
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  bookingDate: {
-    type: Date,
-    required: true
-  },
-  isBooked: {
-    type: Boolean,
-    default: true
-  }
-}, { timestamps: true });
+const BookingSchema = new mongoose.Schema({
+  seatNumber: { type: Number, required: true },
+  bookingDate: { type: String, required: true }, // Store date as string (YYYY-MM-DD)
+});
 
-const SeatBooking = mongoose.model("SeatBooking", seatBookingSchema);
-
-module.exports = SeatBooking;
+module.exports = mongoose.model("Booking", BookingSchema);

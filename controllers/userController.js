@@ -1,6 +1,5 @@
 const Users = require('../models/Users');
 
-// Get all users (existing function)
 exports.getAllUsers = (req, res) => {
   Users.find()
     .then((users) => {
@@ -9,7 +8,6 @@ exports.getAllUsers = (req, res) => {
     .catch((err) => res.status(500).json({ message: "An error occurred", error: err.message }));
 };
 
-// Add a new user (existing function)
 exports.addUsers = (req, res) => {
   const { name } = req.body;
 
@@ -25,9 +23,8 @@ exports.addUsers = (req, res) => {
     .catch((err) => res.status(500).json({ message: "An error occurred", error: err.message }));
 };
 
-// Get logged-in user's information (new function)
 exports.getLoggedInUser = (req, res) => {
-  const userId = req.user.id; // req.user is set by the authentication middleware
+  const userId = req.user.id; 
 
   Users.findById(userId)
     .then(user => {
