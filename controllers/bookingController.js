@@ -1,40 +1,37 @@
-const SeatBooking = require('../models/SeatBooking');
-const jwt = require('jsonwebtoken');
+const Users = require('../models/Users');
 
-// Fetch all bookings
-exports.getAllBookings = (req, res) => {
-  SeatBooking.find()
-    .then((bookings) => {
-      res.status(200).json(bookings);
+exports.getAllUsers = (req, res) => {
+  Users.find()
+    .then((users) => {
+      res.status(200).json(users);
     })
     .catch((err) => res.status(500).json({ message: "An error occurred", error: err.message }));
 };
 
-// Add a booking
-exports.addBooking = async (req, res) => {
-  const { seatNumber, bookingDate } = req.body;
-  const userId = req.user.id; // Get userId from token
+exports.addUsers = (req, res) => {
+  const { name } = req.body;
 
-  if (!seatNumber) {
-    return res.status(400).json({ message: "Seat number required" });
+  if (!name) {
+    return res.status(400).json({ message: "Name is required" });
   }
 
-  try {
-    // Check if the seat is already booked
-    const existingBooking = await SeatBooking.findOne({ seatNumber });
-    if (existingBooking) {
-      return res.status(400).json({ message: "Seat is already booked" });
-    }
+  const newUser = new Users({ name });
+  newUser.save()
+    .then((user) => {
+      res.status(201).json({ message: "User added successfully", user });
+    })
+    .catch((err) => res.status(500).json({ message: "An error occurred", error: err.message }));
+};
 
-    const newBooking = new SeatBooking({
-      seatNumber,
-      userId,
-      bookingDate,
-    });
+exports.getLoggedInUser = (req, res) => {
+  const userId = req.user.id; 
 
-    await newBooking.save();
-    res.status(201).json({ message: "Seat booked successfully", booking: newBooking });
-  } catch (err) {
-    res.status(500).json({ message: "An error occurred", error: err.message });
-  }
+  Users.findById(userId)
+    .then(user => {
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.status(200).json(user);
+    })
+    .catch(err => res.status(500).json({ message: "An error occurred", error: err.message }));
 };
