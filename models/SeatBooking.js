@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const BookingSchema = new mongoose.Schema({
   seatNumber: { type: Number, required: true },
   bookingDate: { type: String, required: true },
-  trainerID: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true }, // Reference to the user
+  trainerID: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
 });
 
 const BookingModel = mongoose.model("bookings", BookingSchema);

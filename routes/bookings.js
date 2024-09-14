@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const BookingModel = require("../models/SeatBooking");
-const authenticateToken = require("../middleware/authenticaticateTokwn"); // Assuming you have authentication
+const authenticateToken = require("../middleware/authenticaticateTokwn"); // Middleware for authentication
 
 // Get bookings for a specific date
-router.get("/bookings", async (req, res) => {
+router.get("/bookings", authenticateToken, async (req, res) => {
   const { date } = req.query;
-
+  
   try {
     const bookings = await BookingModel.find({ bookingDate: date });
     res.json(bookings);
@@ -21,9 +21,17 @@ router.post("/bookings", authenticateToken, async (req, res) => {
   const trainerID = req.user.id; // Extract trainerID from the authenticated user
 
   try {
-    const existingBooking = await BookingModel.findOne({ seatNumber, bookingDate });
+    // Check if the user has already booked a seat for this date
+    const existingUserBooking = await BookingModel.findOne({ bookingDate, trainerID });
 
-    if (existingBooking) {
+    if (existingUserBooking) {
+      return res.status(400).json({ message: "You have already booked a seat for this date" });
+    }
+
+    // Check if the seat is already booked for this date
+    const existingSeatBooking = await BookingModel.findOne({ seatNumber, bookingDate });
+
+    if (existingSeatBooking) {
       return res.status(400).json({ message: "Seat already booked for this date" });
     }
 
