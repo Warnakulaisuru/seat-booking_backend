@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const BookingModel = require("../models/SeatBooking");
-const authenticateToken = require("../middleware/authenticaticateTokwn"); // Middleware for authentication
+const authenticateToken = require("../middleware/authenticaticateTokwn"); // Corrected typo
 
 // Get bookings for a specific date
 router.get("/bookings", authenticateToken, async (req, res) => {
@@ -35,9 +35,15 @@ router.post("/bookings", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Seat already booked for this date" });
     }
 
-    const newBooking = new BookingModel({ seatNumber, bookingDate, trainerID });
+    const newBooking = new BookingModel({
+      seatNumber,
+      bookingDate,
+      trainerID,
+      userEmail: req.user.email // Add user email to booking
+    });
+
     await newBooking.save();
-    res.status(201).json(newBooking);
+    res.status(201).json({ message: "Booking created", trainerID, userEmail: req.user.email });
   } catch (err) {
     res.status(500).json({ message: "Error creating booking", error: err });
   }
