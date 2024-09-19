@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const departmentRoutes = require('./routes/department');
 const userRoutes = require('./routes/users'); 
 const bookingRoutes = require("./routes/bookings");
+const feedbackRoutes = require('./routes/feedback');
 
 
 const app = express();
@@ -164,10 +165,14 @@ app.post("/bookSeat", async (req, res) => {
   }
 });
 
+
+
+
 // Routes for department, user, and booking
 app.use('/api', departmentRoutes);
 app.use('/api', userRoutes);
 app.use("/api", bookingRoutes);
+app.use("/api", feedbackRoutes);
 
 app.listen(port, () => {
   connect();
