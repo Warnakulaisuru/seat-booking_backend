@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const BookingModel = require("../models/SeatBooking");
 const authenticateToken = require("../middleware/authenticaticateTokwn"); // Corrected typo
+const authenticateAdmin = require("../middleware/authenticateAdmin");
 
 // Get bookings for a specific date
 router.get("/bookings", authenticateToken, async (req, res) => {
@@ -46,6 +47,37 @@ router.post("/bookings", authenticateToken, async (req, res) => {
     res.status(201).json({ message: "Booking created", trainerID, userEmail: req.user.email });
   } catch (err) {
     res.status(500).json({ message: "Error creating booking", error: err });
+  }
+});
+
+// Fetch bookings with optional date and search term filters
+router.get("/bookings", authenticateAdmin, async (req, res) => {
+  const { date, search } = req.query;
+  const filter = {};
+
+  if (date) filter.date = date;
+  if (search) {
+    filter.$or = [
+      { userName: { $regex: search, $options: "i" } }, // case-insensitive search for userName
+      { seatNumber: search }, // exact search for seatNumber
+    ];
+  }
+
+  try {
+    const bookings = await Booking.find(filter);
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching bookings" });
+  }
+});
+
+// Delete a booking by ID
+router.delete("/bookings/:id", authenticateAdmin, async (req, res) => {
+  try {
+    await Booking.findByIdAndDelete(req.params.id);
+    res.json({ message: "Booking deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting booking" });
   }
 });
 
